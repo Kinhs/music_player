@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:just_audio/just_audio.dart';
 import 'package:on_audio_query/on_audio_query.dart';
 
 import 'Screens/Player.dart';
@@ -34,6 +35,7 @@ class MyHomePage extends StatefulWidget {
 
 class _MyHomePageState extends State<MyHomePage> {
   final OnAudioQuery _audioQuery = OnAudioQuery();
+  final AudioPlayer _audioPlayer = AudioPlayer();
 
   bool _hasPermission = false;
 
@@ -90,7 +92,7 @@ class _MyHomePageState extends State<MyHomePage> {
                         trailing: const Icon(Icons.arrow_forward_rounded),
                         leading: const Icon(Icons.music_note),
                         onTap: () {
-                          Navigator.push(context, MaterialPageRoute(builder: (context) => Player(songModel: item.data![index],)));
+                          Navigator.push(context, MaterialPageRoute(builder: (context) => Player(songModel: item.data![index], audioPlayer: _audioPlayer,)));
                         },
                       );
                     },
