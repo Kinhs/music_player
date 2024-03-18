@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:on_audio_query/on_audio_query.dart';
 
+import 'Screens/Player.dart';
+
 void main() {
   runApp(const MyApp());
 }
@@ -87,6 +89,9 @@ class _MyHomePageState extends State<MyHomePage> {
                         subtitle: Text(item.data![index].artist ?? "Unknown"),
                         trailing: const Icon(Icons.arrow_forward_rounded),
                         leading: const Icon(Icons.music_note),
+                        onTap: () {
+                          Navigator.push(context, MaterialPageRoute(builder: (context) => Player(songModel: item.data![index],)));
+                        },
                       );
                     },
                   );
