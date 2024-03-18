@@ -3,16 +3,15 @@ import 'package:just_audio/just_audio.dart';
 import 'package:on_audio_query/on_audio_query.dart';
 
 class Player extends StatefulWidget {
-  const Player({Key? key, required this.songModel}) : super(key: key);
+  const Player({Key? key, required this.songModel, required this.audioPlayer}) : super(key: key);
   final SongModel songModel;
+  final AudioPlayer audioPlayer;
 
   @override
   _PlayerState createState() => _PlayerState();
 }
 
 class _PlayerState extends State<Player> {
-
-  final AudioPlayer _audioPlayer = AudioPlayer();
 
   bool _isPlaying = false;
 
@@ -24,8 +23,8 @@ class _PlayerState extends State<Player> {
 
   void playSong() {
     try {
-      _audioPlayer.setAudioSource(AudioSource.uri(Uri.parse(widget.songModel.uri!)));
-      _audioPlayer.play();
+      widget.audioPlayer.setAudioSource(AudioSource.uri(Uri.parse(widget.songModel.uri!)));
+      widget.audioPlayer.play();
       _isPlaying = true;
     } on Exception {}
   }
@@ -98,9 +97,9 @@ class _PlayerState extends State<Player> {
                           onPressed: () {
                             setState(() {
                               if(_isPlaying) {
-                                _audioPlayer.pause();
+                                widget.audioPlayer.pause();
                               } else {
-                                _audioPlayer.play();
+                                widget.audioPlayer.play();
                               }
                               _isPlaying = !_isPlaying;
                             });
