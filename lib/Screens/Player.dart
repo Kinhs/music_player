@@ -3,30 +3,56 @@ import 'package:just_audio/just_audio.dart';
 import 'package:on_audio_query/on_audio_query.dart';
 
 class Player extends StatefulWidget {
-  const Player({Key? key, required this.songModel, required this.audioPlayer}) : super(key: key);
-  final SongModel songModel;
+  const Player({super.key, required this.songModels, required this.audioPlayer, required this.index});
+  final List<SongModel> songModels;
   final AudioPlayer audioPlayer;
+  final index;
 
   @override
   _PlayerState createState() => _PlayerState();
 }
 
 class _PlayerState extends State<Player> {
+  Duration _duration = const Duration();
+  Duration _position = const Duration();
 
   bool _isPlaying = false;
+
+  int playIndex = 0;
 
   @override
   void initState() {
     super.initState();
+    playIndex = widget.index;
     playSong();
   }
 
   void playSong() {
     try {
-      widget.audioPlayer.setAudioSource(AudioSource.uri(Uri.parse(widget.songModel.uri!)));
+      widget.audioPlayer.setAudioSource(AudioSource.uri(Uri.parse(widget.songModels[playIndex].uri!)));
       widget.audioPlayer.play();
       _isPlaying = true;
     } on Exception {}
+    widget.audioPlayer.durationStream.listen((d) {
+      setState(() {
+        _duration = d!;
+      });
+    });
+    widget.audioPlayer.positionStream.listen((p) {
+      setState(() {
+        _position = p;
+      });
+    });
+  }
+
+  void skipNext() {
+    playIndex = (playIndex + 1) % widget.songModels.length;
+    playSong();
+  }
+
+  void skipPrevious() {
+    playIndex = (playIndex - 1) % widget.songModels.length;
+    playSong();
   }
 
   @override
@@ -51,7 +77,7 @@ class _PlayerState extends State<Player> {
               Center(
                 child: Column(
                   children: [
-                    CircleAvatar(
+                    const CircleAvatar(
                       radius: 100.0,
                       child: Icon(Icons.music_note, size: 80),
                     ),
@@ -59,10 +85,10 @@ class _PlayerState extends State<Player> {
                       height: 40.0,
                     ),
                     Text(
-                      widget.songModel.displayNameWOExt,
+                      widget.songModels[playIndex].displayNameWOExt,
                       overflow: TextOverflow.fade,
                       maxLines: 1,
-                      style: TextStyle(
+                      style: const TextStyle(
                         fontWeight: FontWeight.bold,
                         fontSize: 40.0,
                       ),
@@ -71,10 +97,10 @@ class _PlayerState extends State<Player> {
                       height: 15,
                     ),
                     Text(
-                      widget.songModel.artist ?? "Unknown",
+                      widget.songModels[playIndex].artist ?? "Unknown",
                       overflow: TextOverflow.fade,
                       maxLines: 1,
-                      style: TextStyle(
+                      style: const TextStyle(
                         fontWeight: FontWeight.normal,
                         fontSize: 20.0,
                       ),
@@ -84,29 +110,55 @@ class _PlayerState extends State<Player> {
                     ),
                     Row(
                       children: [
-                        Text("0.0"),
-                        Expanded(child: Slider(value: 0.0, onChanged: (value){})),
-                        Text("0.0"),
+                        Text(
+                          _position.toString().split(".")[0]
+                        ),
+                        Expanded(
+                            child: Slider(
+                              min: Duration(microseconds: 0).inSeconds.toDouble(),
+                              value: _position.inSeconds.toDouble(),
+                              max: _duration.inSeconds.toDouble(),
+                              onChanged: (value){
+                                setState(() {
+                                  changeToSeconds(value.toInt());
+                                  value = value;
+                                });
+                              }
+                            )
+                        ),
+                        Text(
+                          _duration.toString().split(".")[0]
+                        ),
                       ],
                     ),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceAround,
                       children: [
-                        IconButton(onPressed: () {}, icon: const Icon(Icons.skip_previous, size: 50,),),
+                        IconButton(
+                          onPressed: () {
+                            skipPrevious();
+                          },
+                          icon: const Icon(Icons.skip_previous, size: 50,),
+                        ),
                         IconButton(
                           onPressed: () {
                             setState(() {
+                              _isPlaying = !_isPlaying;
                               if(_isPlaying) {
                                 widget.audioPlayer.pause();
                               } else {
                                 widget.audioPlayer.play();
                               }
-                              _isPlaying = !_isPlaying;
                             });
                           },
                           icon: Icon(_isPlaying ? Icons.pause : Icons.play_arrow, size: 50,),
                         ),
-                        IconButton(onPressed: () {}, icon: const Icon(Icons.skip_next, size: 50,),),
+                        IconButton(
+                          onPressed: () {
+                            skipNext();
+                          },
+                          icon: const Icon(Icons.skip_next, size: 50,),
+                        ),
                       ],
                     )
                   ],
@@ -117,5 +169,10 @@ class _PlayerState extends State<Player> {
         ),
       ),
     );
+  }
+
+  void changeToSeconds(int seconds) {
+    Duration duration = Duration(seconds: seconds);
+    widget.audioPlayer.seek(duration);
   }
 }
