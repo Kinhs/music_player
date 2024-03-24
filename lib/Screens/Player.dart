@@ -143,12 +143,12 @@ class _PlayerState extends State<Player> {
                         IconButton(
                           onPressed: () {
                             setState(() {
-                              _isPlaying = !_isPlaying;
                               if(_isPlaying) {
                                 widget.audioPlayer.pause();
                               } else {
                                 widget.audioPlayer.play();
                               }
+                              _isPlaying = !_isPlaying;
                             });
                           },
                           icon: Icon(_isPlaying ? Icons.pause : Icons.play_arrow, size: 50,),
