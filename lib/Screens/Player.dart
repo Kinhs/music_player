@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:just_audio/just_audio.dart';
+import 'package:just_audio_background/just_audio_background.dart';
 import 'package:on_audio_query/on_audio_query.dart';
 
 class Player extends StatefulWidget {
@@ -29,7 +30,17 @@ class _PlayerState extends State<Player> {
 
   void playSong() {
     try {
-      widget.audioPlayer.setAudioSource(AudioSource.uri(Uri.parse(widget.songModels[playIndex].uri!)));
+      widget.audioPlayer.setAudioSource(
+          AudioSource.uri(
+              Uri.parse(widget.songModels[playIndex].uri!),
+            tag: MediaItem(
+              id: "$playIndex",
+              artist: "${widget.songModels[playIndex].artist}",
+              title: "${widget.songModels[playIndex].title}",
+              artUri: Uri.parse(playIndex.toString()),
+            ),
+          )
+      );
       widget.audioPlayer.play();
       _isPlaying = true;
     } on Exception {}
@@ -42,6 +53,26 @@ class _PlayerState extends State<Player> {
       setState(() {
         _position = p;
       });
+    });
+    listenToEvent();
+  }
+
+  void listenToEvent() {
+    widget.audioPlayer.playerStateStream.listen((state) {
+      if (state.playing) {
+        setState(() {
+          _isPlaying = true;
+        });
+      } else {
+        setState(() {
+          _isPlaying = false;
+        });
+      }
+      if (state.processingState == ProcessingState.completed) {
+        setState(() {
+          _isPlaying = false;
+        });
+      }
     });
   }
 
@@ -148,7 +179,6 @@ class _PlayerState extends State<Player> {
                               } else {
                                 widget.audioPlayer.play();
                               }
-                              _isPlaying = !_isPlaying;
                             });
                           },
                           icon: Icon(_isPlaying ? Icons.pause : Icons.play_arrow, size: 50,),
