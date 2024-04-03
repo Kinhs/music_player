@@ -1,11 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:just_audio/just_audio.dart';
+import 'package:just_audio_background/just_audio_background.dart';
 import 'package:on_audio_query/on_audio_query.dart';
 
 import 'Screens/Player.dart';
 
-void main() {
-  runApp(const MyApp());
+Future<void> main() async {
+  await JustAudioBackground.init(
+    androidNotificationChannelId: 'com.ryanheise.bg_demo.channel.audio',
+    androidNotificationChannelName: 'Audio playback',
+    androidNotificationOngoing: true,
+  );
+  runApp(MyApp());
 }
 
 class MyApp extends StatelessWidget {
@@ -90,7 +96,11 @@ class _MyHomePageState extends State<MyHomePage> {
                         title: Text(item.data![index].title),
                         subtitle: Text(item.data![index].artist ?? "Unknown"),
                         trailing: const Icon(Icons.arrow_forward_rounded),
-                        leading: const Icon(Icons.music_note),
+                        leading: QueryArtworkWidget(
+                          controller: _audioQuery,
+                          id: item.data![index].id,
+                          type: ArtworkType.AUDIO,
+                        ),
                         onTap: () {
                           Navigator.push(context, MaterialPageRoute(builder: (context) => Player(songModels: item.data!, audioPlayer: _audioPlayer, index: index,)));
                         },
