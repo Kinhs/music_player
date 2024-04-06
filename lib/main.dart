@@ -11,7 +11,7 @@ Future<void> main() async {
     androidNotificationChannelName: 'Audio playback',
     androidNotificationOngoing: true,
   );
-  runApp(MyApp());
+  runApp(const MyApp());
 }
 
 class MyApp extends StatelessWidget {
@@ -43,7 +43,10 @@ class _MyHomePageState extends State<MyHomePage> {
   final OnAudioQuery _audioQuery = OnAudioQuery();
   final AudioPlayer _audioPlayer = AudioPlayer();
 
+  String _searchQuery = '';
+
   bool _hasPermission = false;
+  bool _isSearchBarVisible = false;
 
   @override
   void initState() {
@@ -68,50 +71,107 @@ class _MyHomePageState extends State<MyHomePage> {
       appBar: AppBar(
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
         title: Text(widget.title),
+        actions: [
+          IconButton(
+              onPressed: () {
+                setState(() {
+                  _isSearchBarVisible = !_isSearchBarVisible;
+                });
+              },
+              icon: const Icon(Icons.search),
+          )
+        ],
       ),
-      body: Center(
-        child: !_hasPermission
-            ? noAccessToLibraryWidget()
-            : FutureBuilder<List<SongModel>>(
-                future: _audioQuery.querySongs(
-                  sortType: null,
-                  orderType: OrderType.ASC_OR_SMALLER,
-                  uriType: UriType.EXTERNAL,
-                  ignoreCase: true,
-                ),
-                builder: (context, item) {
-                  if (item.hasError) {
-                    return Text(item.error.toString());
-                  }
-                  if (item.data == null) {
-                    return const CircularProgressIndicator();
-                  }
+      body: Column(
+        children: <Widget>[
+          if (_isSearchBarVisible) _buildSearchBar(),
+          Expanded(
+              child: Center(
+                  child: !_hasPermission
+                      ? noAccessToLibraryWidget()
+                      : FutureBuilder<List<SongModel>>(
+                      future: _audioQuery.querySongs(
+                        sortType: null,
+                        orderType: OrderType.ASC_OR_SMALLER,
+                        uriType: UriType.EXTERNAL,
+                        ignoreCase: true,
+                      ),
+                      builder: (context, item) {
+                        if (item.hasError) {
+                          return Text(item.error.toString());
+                        }
+                        if (item.data == null) {
+                          return const CircularProgressIndicator();
+                        }
 
-                  if (item.data!.isEmpty) return const Text("Nothing found!");
+                        if (item.data!.isEmpty) return const Text("Nothing found!");
 
-                  return ListView.builder(
-                    itemCount: item.data!.length,
-                    itemBuilder: (context, index) {
-                      return ListTile(
-                        title: Text(item.data![index].title),
-                        subtitle: Text(item.data![index].artist ?? "Unknown"),
-                        trailing: const Icon(Icons.arrow_forward_rounded),
-                        leading: QueryArtworkWidget(
-                          controller: _audioQuery,
-                          id: item.data![index].id,
-                          type: ArtworkType.AUDIO,
-                        ),
-                        onTap: () {
-                          Navigator.push(context, MaterialPageRoute(builder: (context) => Player(songModels: item.data!, audioPlayer: _audioPlayer, index: index,)));
-                        },
-                      );
-                    },
-                  );
-                }
+                        List<SongModel>? songs = item.data;
+
+                        if (_searchQuery.isNotEmpty) {
+                          songs = songs
+                              ?.where((song) => song.title
+                              .toLowerCase()
+                              .contains(_searchQuery.toLowerCase()))
+                              .toList();
+                        }
+
+                        if (songs == null || songs.isEmpty) {
+                          return const Text("Nothing found!");
+                        }
+
+
+                        return ListView.builder(
+                          itemCount: songs.length,
+                          itemBuilder: (context, index) {
+                            return ListTile(
+                              title: Text(songs![index].title),
+                              subtitle: Text(songs[index].artist ?? "Unknown"),
+                              trailing: const Icon(Icons.arrow_forward_rounded),
+                              leading: QueryArtworkWidget(
+                                controller: _audioQuery,
+                                id: songs[index].id,
+                                type: ArtworkType.AUDIO,
+                              ),
+                              onTap: () {
+                                Navigator.push(context, MaterialPageRoute(builder: (context) => Player(songModels: songs!, audioPlayer: _audioPlayer, index: index,)));
+                              },
+                            );
+                          },
+                        );
+                      }
+                  )
               )
+          )
+        ],
+
       ),
     );
   }
+
+  Widget _buildSearchBar() {
+    return Padding(
+      padding: const EdgeInsets.all(8.0),
+      child: TextField(
+        onTapOutside: (event) {
+          FocusManager.instance.primaryFocus?.unfocus();
+        },
+        decoration: InputDecoration(
+          hintText: 'Search...',
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(20),
+            borderSide: const BorderSide(color: Colors.blueAccent)
+          ),
+        ),
+        onChanged: (String value) {
+          setState(() {
+            _searchQuery = value;
+          });
+        },
+      ),
+    );
+  }
+
   Widget noAccessToLibraryWidget() {
     return Container(
       decoration: BoxDecoration(
@@ -133,5 +193,4 @@ class _MyHomePageState extends State<MyHomePage> {
     );
   }
 }
-
 
