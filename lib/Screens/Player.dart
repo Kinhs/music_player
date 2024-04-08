@@ -17,6 +17,8 @@ class _PlayerState extends State<Player> {
   Duration _duration = const Duration();
   Duration _position = const Duration();
 
+  List<AudioSource> SourceList = [];
+
   bool _isPlaying = false;
 
   int playIndex = 0;
@@ -24,26 +26,33 @@ class _PlayerState extends State<Player> {
   @override
   void initState() {
     super.initState();
-    playIndex = widget.index;
     playSong();
   }
 
   void playSong() {
     try {
-      widget.audioPlayer.setAudioSource(
+      for (var song in widget.songModels) {
+        SourceList.add(
           AudioSource.uri(
-              Uri.parse(widget.songModels[playIndex].uri!),
+            Uri.parse(song.uri!),
             tag: MediaItem(
-              id: "$playIndex",
-              artist: "${widget.songModels[playIndex].artist}",
-              title: "${widget.songModels[playIndex].title}",
-              artUri: Uri.parse(playIndex.toString()),
-            ),
-          )
+              id: song.id.toString(),
+              title: song.displayNameWOExt,
+              album: song.album ?? "No Album",
+              artUri: Uri.parse(song.id.toString()),
+              artist: song.artist,
+            )
+          ),
+        );
+      }
+      widget.audioPlayer.setAudioSource(
+        ConcatenatingAudioSource(children: SourceList),
+        initialIndex: widget.index,
       );
       widget.audioPlayer.play();
       _isPlaying = true;
     } on Exception {}
+
     widget.audioPlayer.durationStream.listen((d) {
       setState(() {
         _duration = d!;
@@ -55,6 +64,7 @@ class _PlayerState extends State<Player> {
       });
     });
     listenToEvent();
+    listenToSongIndex();
   }
 
   void listenToEvent() {
@@ -76,14 +86,35 @@ class _PlayerState extends State<Player> {
     });
   }
 
+  void listenToSongIndex() {
+    widget.audioPlayer.currentIndexStream.listen(
+          (event) {
+        setState(
+              () {
+            if (event != null) {
+              playIndex = event;
+            }
+          },
+        );
+      },
+    );
+  }
+
   void skipNext() {
-    playIndex = (playIndex + 1) % widget.songModels.length;
-    playSong();
+    if (widget.audioPlayer.hasNext) {
+      widget.audioPlayer.seekToNext();
+    }
   }
 
   void skipPrevious() {
-    playIndex = (playIndex - 1) % widget.songModels.length;
-    playSong();
+    if (widget.audioPlayer.hasPrevious) {
+      widget.audioPlayer.seekToPrevious();
+    }
+  }
+
+  void changeToSeconds(int seconds) {
+    Duration duration = Duration(seconds: seconds);
+    widget.audioPlayer.seek(duration);
   }
 
   @override
@@ -117,7 +148,7 @@ class _PlayerState extends State<Player> {
                     ),
                     Text(
                       widget.songModels[playIndex].displayNameWOExt,
-                      overflow: TextOverflow.fade,
+                      overflow: TextOverflow.ellipsis,
                       maxLines: 1,
                       style: const TextStyle(
                         fontWeight: FontWeight.bold,
@@ -142,23 +173,23 @@ class _PlayerState extends State<Player> {
                     Row(
                       children: [
                         Text(
-                          _position.toString().split(".")[0]
+                            _position.toString().split(".")[0]
                         ),
                         Expanded(
                             child: Slider(
-                              min: Duration(microseconds: 0).inSeconds.toDouble(),
-                              value: _position.inSeconds.toDouble(),
-                              max: _duration.inSeconds.toDouble(),
-                              onChanged: (value){
-                                setState(() {
-                                  changeToSeconds(value.toInt());
-                                  value = value;
-                                });
-                              }
+                                min: Duration(microseconds: 0).inSeconds.toDouble(),
+                                value: _position.inSeconds.toDouble(),
+                                max: _duration.inSeconds.toDouble(),
+                                onChanged: (value){
+                                  setState(() {
+                                    changeToSeconds(value.toInt());
+                                    value = value;
+                                  });
+                                }
                             )
                         ),
                         Text(
-                          _duration.toString().split(".")[0]
+                            _duration.toString().split(".")[0]
                         ),
                       ],
                     ),
@@ -199,10 +230,5 @@ class _PlayerState extends State<Player> {
         ),
       ),
     );
-  }
-
-  void changeToSeconds(int seconds) {
-    Duration duration = Duration(seconds: seconds);
-    widget.audioPlayer.seek(duration);
   }
 }
