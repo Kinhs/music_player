@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:just_audio/just_audio.dart';
 import 'package:just_audio_background/just_audio_background.dart';
 import 'package:on_audio_query/on_audio_query.dart';
+import 'package:provider/provider.dart';
+
+import '../provider/songModelProvider.dart';
 
 class Player extends StatefulWidget {
   const Player({super.key, required this.songModels, required this.audioPlayer, required this.index});
@@ -93,6 +96,7 @@ class _PlayerState extends State<Player> {
               () {
             if (event != null) {
               playIndex = event;
+              context.read<SongModelProvider>().setId(widget.songModels[playIndex].id);
             }
           },
         );
@@ -139,10 +143,7 @@ class _PlayerState extends State<Player> {
               Center(
                 child: Column(
                   children: [
-                    const CircleAvatar(
-                      radius: 100.0,
-                      child: Icon(Icons.music_note, size: 80),
-                    ),
+                    const ArtWorkWidget(),
                     const SizedBox(
                       height: 40.0,
                     ),
@@ -229,6 +230,27 @@ class _PlayerState extends State<Player> {
           ),
         ),
       ),
+    );
+  }
+}
+
+class ArtWorkWidget extends StatelessWidget {
+  const ArtWorkWidget({
+    super.key,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return QueryArtworkWidget(
+      id: context.watch<SongModelProvider>().id,
+      type: ArtworkType.AUDIO,
+      artworkHeight: 250,
+      artworkWidth: 250,
+      nullArtworkWidget: const CircleAvatar (
+        radius: 125,
+        child: Icon(Icons.music_note, size: 100,),
+      ),
+      artworkFit: BoxFit.cover,
     );
   }
 }
