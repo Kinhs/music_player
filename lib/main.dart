@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:just_audio/just_audio.dart';
 import 'package:just_audio_background/just_audio_background.dart';
+import 'package:music_player/provider/songModelProvider.dart';
 import 'package:on_audio_query/on_audio_query.dart';
+import 'package:provider/provider.dart';
 
 import 'Screens/Player.dart';
 
@@ -11,7 +13,12 @@ Future<void> main() async {
     androidNotificationChannelName: 'Audio playback',
     androidNotificationOngoing: true,
   );
-  runApp(const MyApp());
+  runApp(
+    ChangeNotifierProvider(
+      create: (context) => SongModelProvider(),
+      child: const MyApp(),
+    )
+  );
 }
 
 class MyApp extends StatelessWidget {
@@ -75,6 +82,7 @@ class _MyHomePageState extends State<MyHomePage> {
           IconButton(
               onPressed: () {
                 setState(() {
+                  _searchQuery = '';
                   _isSearchBarVisible = !_isSearchBarVisible;
                 });
               },
@@ -132,8 +140,13 @@ class _MyHomePageState extends State<MyHomePage> {
                                 controller: _audioQuery,
                                 id: songs[index].id,
                                 type: ArtworkType.AUDIO,
+                                nullArtworkWidget: const CircleAvatar(
+                                    radius: 25,
+                                    child: Icon(Icons.music_note)
+                                ),
                               ),
                               onTap: () {
+                                context.read<SongModelProvider>().setId(songs![index].id);
                                 Navigator.push(context, MaterialPageRoute(builder: (context) => Player(songModels: songs!, audioPlayer: _audioPlayer, index: index,)));
                               },
                             );
