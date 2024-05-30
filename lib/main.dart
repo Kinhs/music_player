@@ -10,6 +10,8 @@ import 'package:music_app/player/screens/main_screen/main_box.dart';
 import 'package:music_app/player/global_variables.dart';
 import 'package:music_app/player/utilities/initialize.dart';
 
+import 'package:dcdg/dcdg.dart';
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await initialLoad();
